@@ -96,7 +96,15 @@ def new_task_function():
         joined_df = load_and_join_tables(snowflake_options)
         
         # Ensure there are no empty column names and no duplicate column names
-        joined_df = joined_df.toDF(*[col.replace(' ', '_').replace('"', '').replace('-', '_') if col else f"col_{i}" for i, col in enumerate(joined_df.columns)])
+        # joined_df = joined_df.toDF(*[col.replace(' ', '_').replace('"', '').replace('-', '_') if col else f"col_{i}" for i, col in enumerate(joined_df.columns)])
+        joined_df = joined_df.toDF(*[
+            col.replace(' ', '_')
+            .replace('"', '')
+            .replace('-', '_')
+            if col and col.strip() else f"col_{i}"  # Replace only if the column name is invalid
+            for i, col in enumerate(joined_df.columns)
+        ])
+
         joined_df = joined_df.toDF(*[f"{col}_{i}" if joined_df.columns.count(col) > 1 else col for i, col in enumerate(joined_df.columns)])
         print(joined_df.columns)
         
