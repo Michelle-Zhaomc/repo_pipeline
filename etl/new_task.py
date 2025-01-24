@@ -83,12 +83,12 @@ def new_task_function():
         joined_df = joined_df.join(customer_df, on=['CUSTOMERKEY'], how='inner')
 
         # Load SHAMPOO_SALES_DATA from Snowflake
-        sales_df = spark.read \
+        shampoo_df = spark.read \
             .format("snowflake") \
             .options(**snowflake_options) \
             .option("dbtable", "Shampoo_sales_data") \
             .load()
-        
+        joined_df = joined_df.join(shampoo_df, on=['SALESNO'], how='inner')
         
         return joined_df
 
