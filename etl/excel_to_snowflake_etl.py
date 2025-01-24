@@ -38,10 +38,10 @@ def excel_to_snowflake_etl():
         # github_url = "https://github.com/python-vic/ETL_EXCEL_SF/raw/refs/heads/master/AdventureWorks_Sales.xlsx"  # Replace with the actual raw URL
         #github_url = "https://github.com/Michelle-Zhaomc/repo_webapp/Promotion_data.xlsx"
         # path=os.environ['USERPROFILE']+r'\Documents\MyApp\webapp_demo'
-        local_file = pd.read_excel('C:\Users\13693\Documents\MyApp\webapp_demo\Promotion_data.xlsx')
+        local_file_path = r"C:\Users\13693\Documents\MyApp\webapp_demo\Promotion_data.xlsx"
         # Step 1: Download the Excel file from GitHub
         # response = requests.get(github_url)
-        response = requests.get(local_file)
+        response = requests.get(local_file_path)
         if response.status_code == 200:
             print("File downloaded successfully!")
         else:
@@ -66,7 +66,7 @@ def excel_to_snowflake_etl():
             .option("inferSchema", "true") \
             .option("dataAddress", f"'{sheet_name}'!A1") \
             .option("maxRowsInMemory", 20000) \
-            .load(local_file)
+            .load(local_file_path )
         for col in spark_df.columns:
             spark_df = spark_df.withColumnRenamed(col, col.replace(' ', '_'))
             # Add the DataFrame to a dictionary with the sheet name as the key
