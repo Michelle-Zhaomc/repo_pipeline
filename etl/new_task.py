@@ -88,7 +88,7 @@ def new_task_function():
             .options(**snowflake_options) \
             .option("dbtable", "Shampoo_sales_data") \
             .load()
-        joined_df = joined_df.join(shampoo_df, on=['SALESNO'], how='inner')
+        joined_df = shampoo_df.join(shampoo_df, on=['SALESNO'], how='inner')
         
         return joined_df
 
