@@ -28,59 +28,59 @@ def new_task_function():
 
     def load_and_join_tables(snowflake_options: dict):
         # Load data from Snowflake
-        sales_df = spark.read \
-            .format("snowflake") \
-            .options(**snowflake_options) \
-            .option("dbtable", "Sales_data") \
-            .load()
+        # sales_df = spark.read \
+        #     .format("snowflake") \
+        #     .options(**snowflake_options) \
+        #     .option("dbtable", "Sales_data") \
+        #     .load()
         
         # Load and join Sales_Order_data
-        sales_order_df = spark.read \
-            .format("snowflake") \
-            .options(**snowflake_options) \
-            .option("dbtable", "Sales_Order_data") \
-            .load()
-        joined_df = sales_df.join(sales_order_df, on=['SALESORDERLINEKEY'], how='inner')
+        # sales_order_df = spark.read \
+        #     .format("snowflake") \
+        #     .options(**snowflake_options) \
+        #     .option("dbtable", "Sales_Order_data") \
+        #     .load()
+        # joined_df = sales_df.join(sales_order_df, on=['SALESORDERLINEKEY'], how='inner')
         
         # Load and join Sales_Territory_data
-        sales_territory_df = spark.read \
-            .format("snowflake") \
-            .options(**snowflake_options) \
-            .option("dbtable", "Sales_Territory_data") \
-            .load()
-        joined_df = joined_df.join(sales_territory_df, on=['SALESTERRITORYKEY'], how='inner')
+        # sales_territory_df = spark.read \
+        #     .format("snowflake") \
+        #     .options(**snowflake_options) \
+        #     .option("dbtable", "Sales_Territory_data") \
+        #     .load()
+        # joined_df = joined_df.join(sales_territory_df, on=['SALESTERRITORYKEY'], how='inner')
         
         # Load and join Reseller_data
-        reseller_df = spark.read \
-            .format("snowflake") \
-            .options(**snowflake_options) \
-            .option("dbtable", "Reseller_data") \
-            .load()
-        joined_df = joined_df.join(reseller_df, on=['RESELLERKEY'], how='inner')
+        # reseller_df = spark.read \
+        #     .format("snowflake") \
+        #     .options(**snowflake_options) \
+        #     .option("dbtable", "Reseller_data") \
+        #     .load()
+        # joined_df = joined_df.join(reseller_df, on=['RESELLERKEY'], how='inner')
         
         # Load and join Date_data
-        date_df = spark.read \
-            .format("snowflake") \
-            .options(**snowflake_options) \
-            .option("dbtable", "Date_data") \
-            .load()
-        joined_df = joined_df.join(date_df, joined_df["ShipDateKey"] == date_df["DateKey"], how='inner')
+        # date_df = spark.read \
+        #     .format("snowflake") \
+        #     .options(**snowflake_options) \
+        #     .option("dbtable", "Date_data") \
+        #     .load()
+        # joined_df = joined_df.join(date_df, joined_df["ShipDateKey"] == date_df["DateKey"], how='inner')
         
         # Load and join Product_data
-        product_df = spark.read \
-            .format("snowflake") \
-            .options(**snowflake_options) \
-            .option("dbtable", "Product_data") \
-            .load()
-        joined_df = joined_df.join(product_df, on=['PRODUCTKEY'], how='inner')
+        # product_df = spark.read \
+        #     .format("snowflake") \
+        #     .options(**snowflake_options) \
+        #     .option("dbtable", "Product_data") \
+        #     .load()
+        # joined_df = joined_df.join(product_df, on=['PRODUCTKEY'], how='inner')
         
         # Load and join Customer_data
-        customer_df = spark.read \
-            .format("snowflake") \
-            .options(**snowflake_options) \
-            .option("dbtable", "Customer_data") \
-            .load()
-        joined_df = joined_df.join(customer_df, on=['CUSTOMERKEY'], how='inner')
+        # customer_df = spark.read \
+        #     .format("snowflake") \
+        #     .options(**snowflake_options) \
+        #     .option("dbtable", "Customer_data") \
+        #     .load()
+        # joined_df = joined_df.join(customer_df, on=['CUSTOMERKEY'], how='inner')
 
         # Load SHAMPOO_SALES_DATA from Snowflake
         shampoo_df = spark.read \
@@ -119,7 +119,7 @@ def new_task_function():
             with conn.cursor() as cursor:
                 cursor.execute("TRUNCATE TABLE AdventureWorks RESTART IDENTITY CASCADE")
                 conn.commit()
-                print("AdventureWorks table truncated successfully.")
+                print("Promotion table truncated successfully.")
         except Exception as e:
             print(f"Failed to truncate table AdventureWorks: {e}")
         finally:
@@ -132,7 +132,7 @@ def new_task_function():
         # Write joined data to PostgreSQL
         if joined_df:
             joined_df.write \
-                .jdbc(url=jdbc_url, table="AdventureWorks", mode="overwrite", properties=pg_properties)
+                .jdbc(url=jdbc_url, table="Promotion", mode="overwrite", properties=pg_properties)
             print("Joined data written to PostgreSQL")
         else:
             print("No sheets could be joined due to missing common columns.")
