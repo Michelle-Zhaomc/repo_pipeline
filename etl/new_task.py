@@ -105,7 +105,7 @@ def new_task_function():
             for i, col in enumerate(joined_df.columns)
         ])
 
-        joined_df = joined_df.toDF(*[f"{col}_{i}" if joined_df.columns.count(col) > 1 else col for i, col in enumerate(joined_df.columns)])
+        # joined_df = joined_df.toDF(*[f"{col}_{i}" if joined_df.columns.count(col) > 1 else col for i, col in enumerate(joined_df.columns)])
         print(joined_df.columns)
         
         # Truncate the existing table in PostgreSQL before loading new data
