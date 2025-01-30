@@ -83,28 +83,31 @@ def new_task_function():
         # joined_df = joined_df.join(customer_df, on=['CUSTOMERKEY'], how='inner')
 
         # Load SHAMPOO_SALES_DATA from Snowflake
-        shampoo_df = spark.read \
+        # shampoo_df = spark.read \
+        #     .format("snowflake") \
+        #     .options(**snowflake_options) \
+        #     .option("dbtable", "Shampoo_sales_data") \
+        #     .load()
+        fleet_df = spark.read \
             .format("snowflake") \
             .options(**snowflake_options) \
-            .option("dbtable", "Shampoo_sales_data") \
+            .option("dbtable", "fleet_service_data") \
             .load()
-        # joined_df = shampoo_df.join(shampoo_df, on=['SALESNO'], how='inner')
-        
         # return joined_df
-        return shampoo_df
+        return fleet_df
 
     def load_from_snowflake_to_postgresql(snowflake_options: dict, pg_url: str, pg_properties: dict):
         # joined_df = load_and_join_tables(snowflake_options)
-        shampoo_df = load_and_join_tables(snowflake_options)
+        fleet_df = load_and_join_tables(snowflake_options)
         
         # Ensure there are no empty column names and no duplicate column names
         # joined_df = joined_df.toDF(*[col.replace(' ', '_').replace('"', '').replace('-', '_') if col else f"col_{i}" for i, col in enumerate(joined_df.columns)])
         # joined_df = joined_df.toDF(*[f"{col}_{i}" if joined_df.columns.count(col) > 1 else col for i, col in enumerate(joined_df.columns)])
         # print(joined_df.columns)
         
-        shampoo_df = shampoo_df.toDF(*[col.replace(' ', '_').replace('"', '').replace('-', '_') if col else f"col_{i}" for i, col in enumerate(shampoo_df.columns)])
-        shampoo_df = shampoo_df.toDF(*[f"{col}_{i}" if shampoo_df.columns.count(col) > 1 else col for i, col in enumerate(shampoo_df.columns)])
-        print(shampoo_df.columns)
+        fleet_df = fleet_df.toDF(*[col.replace(' ', '_').replace('"', '').replace('-', '_') if col else f"col_{i}" for i, col in enumerate(fleet_df.columns)])
+        fleet_df = fleet_df.toDF(*[f"{col}_{i}" if fleet_df.columns.count(col) > 1 else col for i, col in enumerate(fleet_df.columns)])
+        print(fleet_df.columns)
 
 
         # Truncate the existing table in PostgreSQL before loading new data
@@ -137,8 +140,8 @@ def new_task_function():
         jdbc_url = f"jdbc:postgresql://{pg_url.split('//')[1]}"
 
         # Write joined data to PostgreSQL
-        if shampoo_df:
-            shampoo_df.write \
+        if fleet_df:
+            fleet_df.write \
                 .jdbc(url=jdbc_url, table="Promotion", mode="overwrite", properties=pg_properties)
             print("Joined data written to PostgreSQL")
         else:
