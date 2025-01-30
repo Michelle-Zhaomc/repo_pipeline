@@ -1,19 +1,17 @@
-def excel_to_snowflake_etl(): 
-    
+def csv_to_snowflake_etl():
     # Import necessary libraries
     from pyspark.sql import SparkSession
     import pandas as pd
-    
     import os
     import requests
-    from io import BytesIO
-    # Load environment variables
-  
+    from io import StringIO
+    import tempfile
+
     # Create a Spark session
     spark = SparkSession.builder \
-        .appName("Snowflake to PostgreSQL") \
+        .appName("CSV to Snowflake ETL") \
         .master("local[*]") \
-        .config("spark.jars.packages", "net.snowflake:spark-snowflake_2.12:2.10.0-spark_3.2,net.snowflake:snowflake-jdbc:3.13.3,com.crealytics:spark-excel_2.12:0.13.5") \
+        .config("spark.jars.packages", "net.snowflake:spark-snowflake_2.12:2.10.0-spark_3.2,net.snowflake:snowflake-jdbc:3.13.3") \
         .config("spark.driver.memory", "4g") \
         .config("spark.executor.memory", "4g") \
         .config("spark.executor.cores", "2") \
@@ -32,72 +30,51 @@ def excel_to_snowflake_etl():
         "sfSchema": os.getenv('SNOWFLAKE_SCHEMA'),
         "sfRole": os.getenv('SNOWFLAKE_ROLE')
     }
-    
-    # Function to load all sheets from an Excel file and write them to Snowflake
-    def load_and_write_excel_to_snowflake(snowflake_options: dict):
-        # github_url = "https://github.com/python-vic/ETL_EXCEL_SF/raw/refs/heads/master/AdventureWorks_Sales.xlsx"  # Replace with the actual raw URL
-        # github_url = "https://github.com/Michelle-Zhaomc/repo_webapp/raw/refs/heads/main/data/Promotion_data.xlsx"
-        github_url = "https://github.com/Michelle-Zhaomc/repo_webapp/raw/refs/heads/main/data/fleet_service_data.xlsx"
 
-        # path=os.environ['USERPROFILE']+r'\Documents\MyApp\webapp_demo'
-        # local_file_path = r"C:\Users\13693\Documents\MyApp\webapp_demo\Promotion_data.xlsx"
-        # Step 1: Download the Excel file from GitHub
+    # Function to load a CSV file and write it to Snowflake
+    def load_and_write_csv_to_snowflake(snowflake_options: dict):
+        github_url = "https://github.com/Michelle-Zhaomc/repo_webapp/raw/refs/heads/main/data/fleet_service_data.csv"  # Replace with the actual raw URL
+
+        # Step 1: Download the CSV file from GitHub
         response = requests.get(github_url)
-        # response = requests.get(local_file_path)
         if response.status_code == 200:
             print("File downloaded successfully!")
         else:
             raise Exception(f"Failed to download file from GitHub. Status code: {response.status_code}")
 
-        # Step 2: Read the Excel file into a Pandas DataFrame
-        excel_file = BytesIO(response.content)  # Treat the content as a file
-        # sheets = pd.ExcelFile(excel_file)  
-        # Step 1: Get all sheet names using Pandas
-        excel_file = pd.ExcelFile(excel_file)
-        # sheet_names = excel_file.sheet_names
-        sheet_names = excel_file.sheet_names
-        if len(sheet_names) == 1:
-            sheet_name = sheet_names[0]
-            print(f"Single sheet found: {sheet_name}")
-        else:
-            raise Exception("Multiple sheets detected; only one sheet is supported in this implementation.")
+        # Step 2: Save the CSV content to a temporary file
+        csv_content = response.content.decode('utf-8')
+        with tempfile.NamedTemporaryFile(delete=False, suffix=".csv") as temp_csv_file:
+            temp_csv_file.write(csv_content.encode('utf-8'))
+            temp_csv_path = temp_csv_file.name
 
-        # Step 2: Load each sheet into a Spark DataFrame
-        spark_dfs = {}
-        # for sheet_name in sheet_names:
-        print(f"Loading sheet: {sheet_name}")
-        spark_df = spark.read.format("com.crealytics.spark.excel") \
-            .option("header", "true") \
-            .option("inferSchema", "true") \
-            .option("dataAddress", f"'{sheet_name}'!A1") \
-            .option("maxRowsInMemory", 20000) \
-            .load(github_url)
+        # Step 3: Read the CSV file into a Spark DataFrame directly
+        spark_df = spark.read.csv(temp_csv_path, header=True, inferSchema=True)
+
+        # Rename columns to replace spaces with underscores
         for col in spark_df.columns:
             spark_df = spark_df.withColumnRenamed(col, col.replace(' ', '_'))
-            # Add the DataFrame to a dictionary with the sheet name as the key
-        spark_dfs[sheet_name] = spark_df
-        print(f"Loaded {sheet_name} with {spark_df.count()} rows")
-            
-            # Define Snowflake table name (based on sheet name)
-        table_name = sheet_name.replace(" ", "_")
+
+        # Define Snowflake table name
+        table_name = "fleet_service_data"  # You can customize this as needed
         spark_df.show()
-        print(snowflake_options,table_name)
-            # Write data to Snowflake
+        print(snowflake_options, table_name)
+
+        # Write data to Snowflake
         spark_df.write \
-                .format("snowflake") \
-                .options(**snowflake_options) \
-                .option("dbtable", table_name) \
-                .mode("overwrite") \
-                .save()
-                
+            .format("snowflake") \
+            .options(**snowflake_options) \
+            .option("dbtable", table_name) \
+            .mode("overwrite") \
+            .save()
+
         print(f"Data written to Snowflake table '{table_name}'")
 
-    # Load and write the AdventureWorks data from an Excel file to Snowflake
-    # excel_file_path = excel_path  # Use raw string
-    load_and_write_excel_to_snowflake(snowflake_options)
+    # Load and write the CSV data to Snowflake
+    load_and_write_csv_to_snowflake(snowflake_options)
 
     spark.stop()
 
-
-# excel_to_snowflake_etl()
-
+# from dotenv import load_dotenv
+# load_dotenv()
+# csv_to_snowflake_etl()
