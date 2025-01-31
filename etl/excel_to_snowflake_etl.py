@@ -75,6 +75,6 @@ def csv_to_snowflake_etl():
 
     spark.stop()
 
-# from dotenv import load_dotenv
-# load_dotenv()
-# csv_to_snowflake_etl()
+from dotenv import load_dotenv
+load_dotenv()
+csv_to_snowflake_etl()
