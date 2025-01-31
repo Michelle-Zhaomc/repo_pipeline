@@ -40,7 +40,6 @@ def excel_to_snowflake_etl():
         github_url = "https://github.com/Michelle-Zhaomc/repo_webapp/raw/refs/heads/main/data/fleet_service_data.xlsx"
         # Step 1: Download the Excel file from GitHub
         response = requests.get(github_url)
-        # response = requests.get(local_file_path)
         if response.status_code == 200:
             print("File downloaded successfully!")
         else:
