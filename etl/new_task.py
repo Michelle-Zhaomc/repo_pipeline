@@ -88,12 +88,14 @@ def new_task_function():
         #     .options(**snowflake_options) \
         #     .option("dbtable", "Shampoo_sales_data") \
         #     .load()
+
+        # return joined_df
         fleet_df = spark.read \
             .format("snowflake") \
             .options(**snowflake_options) \
             .option("dbtable", "fleet_service_data") \
             .load()
-        # return joined_df
+        
         return fleet_df
 
     def load_from_snowflake_to_postgresql(snowflake_options: dict, pg_url: str, pg_properties: dict):
@@ -142,7 +144,7 @@ def new_task_function():
         # Write joined data to PostgreSQL
         if fleet_df:
             fleet_df.write \
-                .jdbc(url=jdbc_url, table="Promotion", mode="overwrite", properties=pg_properties)
+                .jdbc(url=jdbc_url, table="Fleet", mode="overwrite", properties=pg_properties)
             print("Joined data written to PostgreSQL")
         else:
             print("No sheets could be joined due to missing common columns.")
