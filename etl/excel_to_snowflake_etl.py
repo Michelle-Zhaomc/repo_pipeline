@@ -6,6 +6,7 @@ def excel_to_snowflake_etl():
     import os
     import requests
     from io import BytesIO
+    from openpyxl import load_workbook
 
     # Create a Spark session
     spark = SparkSession.builder \
