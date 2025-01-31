@@ -43,9 +43,16 @@ def excel_to_snowflake_etl():
 
         # Step 2: Read the Excel file using Pandas (strip styles)
         excel_file = BytesIO(response.content)
-        df = pd.read_excel(excel_file, engine="openpyxl", ignore_styles=True)  # ✅ Remove styles
-        cleaned_file_path = "c:\cleaned_fleet_service_data.xlsx"
-        df.to_excel(cleaned_file_path, index=False)  # ✅ Save cleaned version
+        with pd.ExcelFile(excel_file, engine="openpyxl") as xls:
+            sheet_name = xls.sheet_names[0]  # Read first sheet
+            df = pd.read_excel(xls, sheet_name=sheet_name, engine="openpyxl")
+
+            # **Manually strip styles** by creating a new Excel file
+            cleaned_file_path = "c:\cleaned_fleet_service_data.xlsx"
+            with pd.ExcelWriter(cleaned_file_path, engine="openpyxl") as writer:
+                df.to_excel(writer, index=False)
+
+        print(f"Saved cleaned Excel file: {cleaned_file_path}")
 
         # Step 3: Load cleaned file into Spark
         spark_df = spark.read.format("com.crealytics.spark.excel") \
