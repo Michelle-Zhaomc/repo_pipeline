@@ -3,11 +3,12 @@ def excel_to_snowflake_etl():
     # Import necessary libraries
     from pyspark.sql import SparkSession
     import pandas as pd
+    
     import os
     import requests
     from io import BytesIO
-    from openpyxl import load_workbook
-
+    # Load environment variables
+  
     # Create a Spark session
     spark = SparkSession.builder \
         .appName("Snowflake to PostgreSQL") \
@@ -31,62 +32,62 @@ def excel_to_snowflake_etl():
         "sfSchema": os.getenv('SNOWFLAKE_SCHEMA'),
         "sfRole": os.getenv('SNOWFLAKE_ROLE')
     }
-
+    
+    # Function to load all sheets from an Excel file and write them to Snowflake
     def load_and_write_excel_to_snowflake(snowflake_options: dict):
+        # github_url = "https://github.com/python-vic/ETL_EXCEL_SF/raw/refs/heads/master/AdventureWorks_Sales.xlsx"  # Replace with the actual raw URL
+        # github_url = "https://github.com/Michelle-Zhaomc/repo_webapp/raw/refs/heads/main/data/Promotion_data.xlsx"
         github_url = "https://github.com/Michelle-Zhaomc/repo_webapp/raw/refs/heads/main/data/fleet_service_data.xlsx"
-
-        # Step 1: Download the Excel file
+        # Step 1: Download the Excel file from GitHub
         response = requests.get(github_url)
+        # response = requests.get(local_file_path)
         if response.status_code == 200:
             print("File downloaded successfully!")
         else:
             raise Exception(f"Failed to download file from GitHub. Status code: {response.status_code}")
 
-        # Step 2: Read the Excel file using Pandas (strip styles)
-        excel_file = BytesIO(response.content)
-        wb = load_workbook(excel_file, data_only=True)  # Ignore styles by setting `data_only=True`
+        # Step 2: Read the Excel file into a Pandas DataFrame
+        excel_file = BytesIO(response.content)  # Treat the content as a file
+        # sheets = pd.ExcelFile(excel_file)  
+        # Step 1: Get all sheet names using Pandas
+        excel_file = pd.ExcelFile(excel_file)
+        # sheet_names = excel_file.sheet_names
+        sheet_names = excel_file.sheet_names
+        if len(sheet_names) == 1:
+            sheet_name = sheet_names[0]
+            print(f"Single sheet found: {sheet_name}")
+        else:
+            raise Exception("Multiple sheets detected; only one sheet is supported in this implementation.")
 
-        # Step 3: Save the cleaned file
-        cleaned_file_path = "c:\cleaned_fleet_service_data.xlsx"
-        wb.save(cleaned_file_path)
-        print(f"Saved cleaned Excel file: {cleaned_file_path}")
-
-        # Step 4: Use cleaned file in Pandas
-        df = pd.read_excel(cleaned_file_path, engine="openpyxl")
-        print(df.head())  # Verify it loads correctly
-
-        # Step 3: Load cleaned file into Spark
+        # Step 2: Load each sheet into a Spark DataFrame
+        spark_dfs = {}
+        # for sheet_name in sheet_names:
+        print(f"Loading sheet: {sheet_name}")
         spark_df = spark.read.format("com.crealytics.spark.excel") \
             .option("header", "true") \
             .option("inferSchema", "true") \
-            .option("dataAddress", "'Sheet1'!A1") \
+            .option("dataAddress", f"'{sheet_name}'!A1") \
             .option("maxRowsInMemory", 20000) \
-            .load(cleaned_file_path)  # ✅ Load the cleaned file
-
-        # Rename columns (replace spaces with underscores)
+            .load(github_url)
         for col in spark_df.columns:
             spark_df = spark_df.withColumnRenamed(col, col.replace(' ', '_'))
-
-        # Show loaded DataFrame
-        print(f"Loaded data with {spark_df.count()} rows")
+            # Add the DataFrame to a dictionary with the sheet name as the key
+        spark_dfs[sheet_name] = spark_df
+        print(f"Loaded {sheet_name} with {spark_df.count()} rows")
+            
+            # Define Snowflake table name (based on sheet name)
+        table_name = sheet_name.replace(" ", "_")
         spark_df.show()
-
-        # Define Snowflake table name
-        table_name = "fleet_service_data"
-
-        # Write data to Snowflake
+        print(snowflake_options,table_name)
+            # Write data to Snowflake
         spark_df.write \
-            .format("snowflake") \
-            .options(**snowflake_options) \
-            .option("dbtable", table_name) \
-            .mode("overwrite") \
-            .save()
-
-        print(f"Data successfully written to Snowflake table: {table_name}")
-
-    # Run the function
-    load_and_write_excel_to_snowflake(snowflake_options)
-
+                .format("snowflake") \
+                .options(**snowflake_options) \
+                .option("dbtable", table_name) \
+                .mode("overwrite") \
+                .save()
+                
+        print(f"Data written to Snowflake table '{table_name}'")
 
     # Load and write the AdventureWorks data from an Excel file to Snowflake
     # excel_file_path = excel_path  # Use raw string
