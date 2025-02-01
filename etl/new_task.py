@@ -131,9 +131,9 @@ def new_task_function():
             with conn.cursor() as cursor:
                 cursor.execute("TRUNCATE TABLE AdventureWorks RESTART IDENTITY CASCADE")
                 conn.commit()
-                print("Promotion table truncated successfully.")
+                print("Fleet table truncated successfully.")
         except Exception as e:
-            print(f"Failed to truncate table AdventureWorks: {e}")
+            print(f"Failed to truncate table Fleet: {e}")
         finally:
             if conn:
                 conn.close()
