@@ -90,26 +90,42 @@ def new_task_function():
         #     .load()
 
         # return joined_df
-        fleet_df = spark.read \
+
+        # Fleet data
+        # fleet_df = spark.read \
+        #     .format("snowflake") \
+        #     .options(**snowflake_options) \
+        #     .option("dbtable", "fleet_service_data") \
+        #     .load()
+        
+        # return fleet_df
+
+        # Load and join Business Credit Risk
+        credit_df = spark.read \
             .format("snowflake") \
             .options(**snowflake_options) \
-            .option("dbtable", "fleet_service_data") \
+            .option("dbtable", "credit_applications") \
             .load()
-        
-        return fleet_df
-
+        credit_risk_df = spark.read \
+            .format("snowflake") \
+            .options(**snowflake_options) \
+            .option("dbtable", "credit_risk") \
+            .load()
+        joined_df = credit_df.join(credit_risk_df, on=['BAN'], how='inner')
+        return joined_df
+    
     def load_from_snowflake_to_postgresql(snowflake_options: dict, pg_url: str, pg_properties: dict):
         # joined_df = load_and_join_tables(snowflake_options)
-        fleet_df = load_and_join_tables(snowflake_options)
+        joined_df = load_and_join_tables(snowflake_options)
         
         # Ensure there are no empty column names and no duplicate column names
         # joined_df = joined_df.toDF(*[col.replace(' ', '_').replace('"', '').replace('-', '_') if col else f"col_{i}" for i, col in enumerate(joined_df.columns)])
         # joined_df = joined_df.toDF(*[f"{col}_{i}" if joined_df.columns.count(col) > 1 else col for i, col in enumerate(joined_df.columns)])
         # print(joined_df.columns)
         
-        fleet_df = fleet_df.toDF(*[col.replace(' ', '_').replace('"', '').replace('-', '_') if col else f"col_{i}" for i, col in enumerate(fleet_df.columns)])
-        fleet_df = fleet_df.toDF(*[f"{col}_{i}" if fleet_df.columns.count(col) > 1 else col for i, col in enumerate(fleet_df.columns)])
-        print(fleet_df.columns)
+        joined_df = joined_df.toDF(*[col.replace(' ', '_').replace('"', '').replace('-', '_') if col else f"col_{i}" for i, col in enumerate(joined_df.columns)])
+        joined_df = joined_df.toDF(*[f"{col}_{i}" if joined_df.columns.count(col) > 1 else col for i, col in enumerate(joined_df.columns)])
+        print(joined_df.columns)
 
 
         # Truncate the existing table in PostgreSQL before loading new data
@@ -142,8 +158,8 @@ def new_task_function():
         jdbc_url = f"jdbc:postgresql://{pg_url.split('//')[1]}"
 
         # Write joined data to PostgreSQL
-        if fleet_df:
-            fleet_df.write \
+        if joined_df:
+            joined_df.write \
                 .jdbc(url=jdbc_url, table="Fleet", mode="overwrite", properties=pg_properties)
             print("Joined data written to PostgreSQL")
         else:
